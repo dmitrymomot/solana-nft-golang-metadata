@@ -4,13 +4,10 @@ type GetTokenAccountsByOwner struct {
 	Context struct {
 		Slot int64 `json:"slot"`
 	} `json:"context"`
-	Value []struct {
-		TokenAccount
-		Pubkey string `json:"pubkey"`
-	} `json:"value"`
+	Value []Value `json:"value"`
 }
 
-type TokenAccount struct {
+type Value struct {
 	Account struct {
 		Data struct {
 			Parsed struct {
@@ -36,4 +33,5 @@ type TokenAccount struct {
 		Owner      string `json:"owner"`
 		RentEpoch  int64  `json:"rentEpoch"`
 	} `json:"account"`
+	Pubkey string `json:"pubkey"`
 }

@@ -5,17 +5,20 @@ import (
 
 	"github.com/ybbus/jsonrpc/v2"
 
+	base58 "github.com/btcsuite/btcutil/base58"
+	sdk "github.com/gagliardetto/solana-go"
+
+	globals "github.com/solana-nft-golang-metadata/globals"
 	methods "github.com/solana-nft-golang-metadata/jsonrpc-methods"
 	responses "github.com/solana-nft-golang-metadata/jsonrpc-responses"
-	utils "github.com/solana-nft-golang-metadata/utils"
 )
 
 func main() {
 	rpcClient := jsonrpc.NewClient("https://api.mainnet-beta.solana.com")
 
-	address := "6PiuodUPFTndjTiy2X3u1znTgbiUsQs7o5pUgKdLW6mk"
+	accountOwner := "CDwhBZtT72QESpACGtf2mrvfT1xdCmdMiTMPMwb78sn7"
 
-	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, address)
+	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, accountOwner)
 
 	if err != nil {
 		fmt.Println(err)
@@ -23,28 +26,42 @@ func main() {
 
 	value := tokenAccountsByOwner.Value
 
-	var tokenAccounts []responses.TokenAccount
+	nftAccounts := locateNFTAccounts(value)
 
-	for _, tokenAccount := range value {
-		tokenAccounts = append(tokenAccounts, tokenAccount.TokenAccount)
-	}
+	// Base58 encoding of the mint address
+	// Base58 econding of the metadata public key
+	// metaplex seed constant
 
-	nftAccounts := locateNFTAccounts(tokenAccounts)
+	derivePDAs(nftAccounts)
 
-	utils.ToJson(nftAccounts)
 }
 
-func locateNFTAccounts(tokenAccountsByOwner []responses.TokenAccount) []responses.TokenAccount {
-	var nftAccounts []responses.TokenAccount
+func locateNFTAccounts(value []responses.Value) []responses.Value {
+	var nftAccounts []responses.Value
 
-	for _, tokenAccount := range tokenAccountsByOwner {
-		amount := tokenAccount.Account.Data.Parsed.Info.TokenAmount.Amount
-		fmt.Println("amount", amount)
-		decimals := tokenAccount.Account.Data.Parsed.Info.TokenAmount.Decimals
-		fmt.Println("decimals", amount)
+	for _, account := range value {
+		amount := account.Account.Data.Parsed.Info.TokenAmount.Amount
+		decimals := account.Account.Data.Parsed.Info.TokenAmount.Decimals
 		if amount == 1 && decimals == 0 {
-			nftAccounts = append(nftAccounts, tokenAccount)
+			nftAccounts = append(nftAccounts, account)
 		}
 	}
 	return nftAccounts
+}
+
+func derivePDAs(nftAccounts []responses.Value) {
+	for _, value := range nftAccounts {
+		mint := value.Account.Data.Parsed.Info.Mint
+
+		base58Mint := base58.Decode(mint)
+
+		publicKey := sdk.PublicKeyFromBytes(base58Mint)
+
+		seed := [][]byte{
+			[]byte(base58.Decode(globals.METADATA_ACCOUNT_PUBKEY)),
+			[]byte(globals.METADATA_NAME),
+		}
+
+		fmt.Println(sdk.FindProgramAddress(seed, publicKey))
+	}
 }
