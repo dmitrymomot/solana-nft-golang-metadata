@@ -1,26 +1,50 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/ybbus/jsonrpc/v2"
+
+	methods "github.com/solana-nft-golang-metadata/jsonrpc-methods"
+	responses "github.com/solana-nft-golang-metadata/jsonrpc-responses"
+	utils "github.com/solana-nft-golang-metadata/utils"
 )
 
 func main() {
-	fmt.Println("GO")
 	rpcClient := jsonrpc.NewClient("https://api.mainnet-beta.solana.com")
-	response, err := rpcClient.Call("getTokenAccountsByOwner", "rzD4a16cyZ4Ruo8xb3HjbB19pk6MZRqbifHHkznt5VD", map[string]interface{}{
-		"programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-	}, map[string]interface{}{
-		"encoding": "jsonParsed",
-	})
+
+	address := "6PiuodUPFTndjTiy2X3u1znTgbiUsQs7o5pUgKdLW6mk"
+
+	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, address)
+
 	if err != nil {
 		fmt.Println(err)
 	}
-	b, err := json.MarshalIndent(response.Result, "", " ")
-	if err != nil {
-		fmt.Println("error:", err)
+
+	value := tokenAccountsByOwner.Value
+
+	var tokenAccounts []responses.TokenAccount
+
+	for _, tokenAccount := range value {
+		tokenAccounts = append(tokenAccounts, tokenAccount.TokenAccount)
 	}
-	fmt.Println(string(b))
+
+	nftAccounts := locateNFTAccounts(tokenAccounts)
+
+	utils.ToJson(nftAccounts)
+}
+
+func locateNFTAccounts(tokenAccountsByOwner []responses.TokenAccount) []responses.TokenAccount {
+	var nftAccounts []responses.TokenAccount
+
+	for _, tokenAccount := range tokenAccountsByOwner {
+		amount := tokenAccount.Account.Data.Parsed.Info.TokenAmount.Amount
+		fmt.Println("amount", amount)
+		decimals := tokenAccount.Account.Data.Parsed.Info.TokenAmount.Decimals
+		fmt.Println("decimals", amount)
+		if amount == 1 && decimals == 0 {
+			nftAccounts = append(nftAccounts, tokenAccount)
+		}
+	}
+	return nftAccounts
 }
