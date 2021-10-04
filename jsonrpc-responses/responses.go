@@ -35,3 +35,16 @@ type Value struct {
 	} `json:"account"`
 	Pubkey string `json:"pubkey"`
 }
+
+type GetAccountInfo struct {
+	Context struct {
+		Slot int64 `json:"slot"`
+	} `json:"context"`
+	Value struct {
+		Data       []string `json:"data"`
+		Executable bool     `json:"executable"`
+		Lamports   int64    `json:"lamports"`
+		Owner      string   `json:"owner"`
+		RentEpoch  int64    `json:"rentEpoch"`
+	} `json:"value"`
+}

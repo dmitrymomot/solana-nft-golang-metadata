@@ -30,3 +30,22 @@ func GetTokenAccountsByOwner(rpcClient jsonrpc.RPCClient, accountOwner string) (
 
 	return tokenAccountsByOwner, nil
 }
+
+func GetAccountInfo(rpcClient jsonrpc.RPCClient, account string) (*responses.GetAccountInfo, error) {
+	response, err := rpcClient.Call("getAccountInfo", account, map[string]interface{}{
+		"encoding": "base64",
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var accountInfo *responses.GetAccountInfo
+	err = response.GetObject(&accountInfo)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return accountInfo, nil
+}

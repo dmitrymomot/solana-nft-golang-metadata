@@ -5,9 +5,12 @@ import (
 
 	"github.com/ybbus/jsonrpc/v2"
 
+	b64 "encoding/base64"
+
 	base58 "github.com/btcsuite/btcutil/base58"
 	"github.com/gagliardetto/solana-go"
 	sdk "github.com/gagliardetto/solana-go"
+	borsh "github.com/near/borsh-go"
 
 	globals "github.com/solana-nft-golang-metadata/globals"
 	methods "github.com/solana-nft-golang-metadata/jsonrpc-methods"
@@ -30,15 +33,29 @@ func main() {
 
 	nftAccounts := locateNFTAccounts(value)
 
-	utils.ToJson(nftAccounts)
-
-	// Base58 encoding of the mint address
-	// Base58 econding of the metadata public key
-	// metaplex seed constant
-
 	programAddresses := derivePDAs(nftAccounts)
 
-	utils.ToJson(programAddresses)
+	var accountInfoList []responses.GetAccountInfo
+
+	for _, address := range programAddresses {
+		accountInfo, err := methods.GetAccountInfo(rpcClient, address.String())
+		if err != nil {
+			fmt.Println(err)
+		}
+		accountInfoList = append(accountInfoList, *accountInfo)
+	}
+
+	utils.ToJson(accountInfoList)
+
+	for _, accountInfo := range accountInfoList {
+		y := new(globals.MetaplexMeta)
+		decoded, err := b64.StdEncoding.DecodeString(accountInfo.Value.Data[0])
+		if err != nil {
+			fmt.Println(err)
+		}
+		borsh.Deserialize(y, decoded)
+		fmt.Println(y)
+	}
 }
 
 func locateNFTAccounts(value []responses.Value) []responses.Value {
