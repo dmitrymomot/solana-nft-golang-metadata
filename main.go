@@ -6,17 +6,19 @@ import (
 	"github.com/ybbus/jsonrpc/v2"
 
 	base58 "github.com/btcsuite/btcutil/base58"
+	"github.com/gagliardetto/solana-go"
 	sdk "github.com/gagliardetto/solana-go"
 
 	globals "github.com/solana-nft-golang-metadata/globals"
 	methods "github.com/solana-nft-golang-metadata/jsonrpc-methods"
 	responses "github.com/solana-nft-golang-metadata/jsonrpc-responses"
+	"github.com/solana-nft-golang-metadata/utils"
 )
 
 func main() {
 	rpcClient := jsonrpc.NewClient("https://api.mainnet-beta.solana.com")
 
-	accountOwner := "CDwhBZtT72QESpACGtf2mrvfT1xdCmdMiTMPMwb78sn7"
+	accountOwner := "HbzndYqJhaCQdH1NqYVbjZqsW1dYwN4mbEw1icouTHdy"
 
 	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, accountOwner)
 
@@ -28,12 +30,15 @@ func main() {
 
 	nftAccounts := locateNFTAccounts(value)
 
+	utils.ToJson(nftAccounts)
+
 	// Base58 encoding of the mint address
 	// Base58 econding of the metadata public key
 	// metaplex seed constant
 
-	derivePDAs(nftAccounts)
+	programAddresses := derivePDAs(nftAccounts)
 
+	utils.ToJson(programAddresses)
 }
 
 func locateNFTAccounts(value []responses.Value) []responses.Value {
@@ -49,19 +54,27 @@ func locateNFTAccounts(value []responses.Value) []responses.Value {
 	return nftAccounts
 }
 
-func derivePDAs(nftAccounts []responses.Value) {
+func derivePDAs(nftAccounts []responses.Value) []solana.PublicKey {
+	var PDAs []solana.PublicKey
+
 	for _, value := range nftAccounts {
 		mint := value.Account.Data.Parsed.Info.Mint
 
-		base58Mint := base58.Decode(mint)
+		mintDecoded := base58.Decode(mint)
 
-		publicKey := sdk.PublicKeyFromBytes(base58Mint)
+		publicKey := sdk.MustPublicKeyFromBase58(globals.METADATA_PUBKEY)
 
 		seed := [][]byte{
-			[]byte(base58.Decode(globals.METADATA_ACCOUNT_PUBKEY)),
-			[]byte(globals.METADATA_NAME),
+			[]byte(globals.METAPLEX_SEED),
+			base58.Decode(globals.METADATA_PUBKEY),
+			mintDecoded,
 		}
-
-		fmt.Println(sdk.FindProgramAddress(seed, publicKey))
+		PDA, _, err := sdk.FindProgramAddress(seed, publicKey)
+		if err != nil {
+			fmt.Println(err)
+		}
+		PDAs = append(PDAs, PDA)
 	}
+
+	return PDAs
 }
