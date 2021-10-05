@@ -18,6 +18,7 @@ func main() {
 
 // AllNFTsForAddress gets metadata for all NFTs owned by a solana address
 // Returns a slice of byte slices containing each NFT metadata json
+// TODO - implement a way to do this concurrently because waiting until the end is slow
 func AllNFTsForAddress(address string) ([][]byte, error) {
 	rpcClient := jsonrpc.NewClient(globals.SOLANA_MAINNET)
 	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, address)
