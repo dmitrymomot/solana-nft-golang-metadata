@@ -16,7 +16,8 @@ func main() {
 	mintAddressExample()
 }
 
-// AllNFTsForAddress gets metadata for all NFTs owned by an address
+// AllNFTsForAddress gets metadata for all NFTs owned by a solana address
+// Returns a slice of byte slices containing each NFT metadata json
 func AllNFTsForAddress(address string) ([][]byte, error) {
 	rpcClient := jsonrpc.NewClient(globals.SOLANA_MAINNET)
 	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, address)
@@ -45,7 +46,8 @@ func AllNFTsForAddress(address string) ([][]byte, error) {
 	return NFTs, nil
 }
 
-// NFTMetadata gets metadata for an NFT using the token address
+// NFTMetadata gets metadata for an NFT using the solana token mint address
+// Returns a byte slice containing the NFT metadata json
 func NFTMetadata(address string) ([]byte, error) {
 	rpcClient := jsonrpc.NewClient(globals.SOLANA_MAINNET)
 	programAddress := derivePDA(address)
