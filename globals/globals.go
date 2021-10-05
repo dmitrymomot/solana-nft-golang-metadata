@@ -6,6 +6,8 @@ import (
 
 const METAPLEX_SEED = "metadata"
 const METADATA_PUBKEY = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+const PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+const SOLANA_MAINNET = "https://api.mainnet-beta.solana.com"
 
 type MetaplexMeta struct {
 	Key              byte
@@ -20,7 +22,7 @@ type MetaplexData struct {
 	Uri    string
 }
 
-type MetaplexJSONStructure struct {
+type MetaplexJSON struct {
 	AnimationURL string `json:"animation_url"`
 	Attributes   []struct {
 		TraitType string `json:"trait_type"`

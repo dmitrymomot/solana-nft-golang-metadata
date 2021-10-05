@@ -5,14 +5,13 @@ import (
 
 	"github.com/ybbus/jsonrpc/v2"
 
+	globals "github.com/solana-nft-golang-metadata/globals"
 	responses "github.com/solana-nft-golang-metadata/jsonrpc-responses"
 )
 
-const ProgramId = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-
 func GetTokenAccountsByOwner(rpcClient jsonrpc.RPCClient, accountOwner string) (*responses.GetTokenAccountsByOwner, error) {
 	response, err := rpcClient.Call("getTokenAccountsByOwner", accountOwner, map[string]interface{}{
-		"programId": ProgramId,
+		"programId": globals.PROGRAM_ID,
 	}, map[string]interface{}{
 		"encoding": "jsonParsed",
 	})
