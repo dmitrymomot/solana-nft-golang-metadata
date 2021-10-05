@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 
 	"github.com/ybbus/jsonrpc/v2"
 
 	b64 "encoding/base64"
+	"encoding/json"
 
 	base58 "github.com/btcsuite/btcutil/base58"
 	"github.com/gagliardetto/solana-go"
@@ -15,13 +19,12 @@ import (
 	globals "github.com/solana-nft-golang-metadata/globals"
 	methods "github.com/solana-nft-golang-metadata/jsonrpc-methods"
 	responses "github.com/solana-nft-golang-metadata/jsonrpc-responses"
-	"github.com/solana-nft-golang-metadata/utils"
 )
 
 func main() {
 	rpcClient := jsonrpc.NewClient("https://api.mainnet-beta.solana.com")
 
-	accountOwner := "HbzndYqJhaCQdH1NqYVbjZqsW1dYwN4mbEw1icouTHdy"
+	accountOwner := "9j3Mcte8bwh97SsUBqZgApG5xieGCaXHYKCjFSwxZ14t"
 
 	tokenAccountsByOwner, err := methods.GetTokenAccountsByOwner(rpcClient, accountOwner)
 
@@ -35,27 +38,13 @@ func main() {
 
 	programAddresses := derivePDAs(nftAccounts)
 
-	var accountInfoList []responses.GetAccountInfo
+	accountInfoList := getAccountInfoList(rpcClient, programAddresses)
 
-	for _, address := range programAddresses {
-		accountInfo, err := methods.GetAccountInfo(rpcClient, address.String())
-		if err != nil {
-			fmt.Println(err)
-		}
-		accountInfoList = append(accountInfoList, *accountInfo)
-	}
+	nftURIs := getURIs(accountInfoList)
 
-	utils.ToJson(accountInfoList)
+	serializedNFTs := serializeNFTs(nftURIs)
 
-	for _, accountInfo := range accountInfoList {
-		y := new(globals.MetaplexMeta)
-		decoded, err := b64.StdEncoding.DecodeString(accountInfo.Value.Data[0])
-		if err != nil {
-			fmt.Println(err)
-		}
-		borsh.Deserialize(y, decoded)
-		fmt.Println(y)
-	}
+	fmt.Println(serializedNFTs)
 }
 
 func locateNFTAccounts(value []responses.Value) []responses.Value {
@@ -94,4 +83,66 @@ func derivePDAs(nftAccounts []responses.Value) []solana.PublicKey {
 	}
 
 	return PDAs
+}
+
+func getAccountInfoList(rpcClient jsonrpc.RPCClient, publicKeys []sdk.PublicKey) []responses.GetAccountInfo {
+	var accountInfoList []responses.GetAccountInfo
+	for _, address := range publicKeys {
+		accountInfo, err := methods.GetAccountInfo(rpcClient, address.String())
+		if err != nil {
+			fmt.Println(err)
+		}
+		if accountInfo != nil {
+			accountInfoList = append(accountInfoList, *accountInfo)
+		}
+	}
+	return accountInfoList
+}
+
+func getURIs(accountInfoList []responses.GetAccountInfo) []string {
+	var URIs []string
+	for _, accountInfo := range accountInfoList {
+		if accountInfo.Value.Data != nil {
+			decoded, err := b64.StdEncoding.DecodeString(accountInfo.Value.Data[0])
+			if err != nil {
+				fmt.Println(err)
+			}
+			mm := new(globals.MetaplexMeta)
+			borsh.Deserialize(mm, decoded)
+
+			uri := mm.Data.Uri
+			sanitizedURI := strings.Replace(uri, "\u0000", "", -1)
+
+			URIs = append(URIs, sanitizedURI)
+		}
+	}
+	return URIs
+}
+
+func serializeNFTs(URIs []string) []globals.MetaplexJSONStructure {
+
+	var AddressNFTMetadata []globals.MetaplexJSONStructure
+
+	for _, uri := range URIs {
+		resp, err := http.Get(uri)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		var nftMetadata = new(globals.MetaplexJSONStructure)
+
+		err = json.Unmarshal(body, &nftMetadata)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(nftMetadata)
+		AddressNFTMetadata = append(AddressNFTMetadata, *nftMetadata)
+	}
+
+	return AddressNFTMetadata
 }
