@@ -1,4 +1,4 @@
-module github.com/solana-nft-golang-metadata
+module github.com/based58/solana-nft-golang-metadata
 
 go 1.16
 

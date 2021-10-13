@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	metadata "github.com/solana-nft-golang-metadata/pkg"
+	metadata "github.com/based58/solana-nft-golang-metadata/pkg"
 )
 
 func main() {

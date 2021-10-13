@@ -3,7 +3,7 @@ package examples
 import (
 	"fmt"
 
-	metadata "github.com/solana-nft-golang-metadata/pkg"
+	metadata "github.com/based58/solana-nft-golang-metadata/pkg"
 )
 
 func accountOwnerExample() {
@@ -18,7 +18,7 @@ func accountOwnerExample() {
 }
 
 func mintAddressExample() {
-	mintAddress := "3wW42N6Q5JcqbewpEZUHsdjU7XEYMf5p4CZADZmTdfEi"
+	mintAddress := "9qtN3RDr8sykdzmJoDjYbAAQmjoQcAfsqj8ipT6rh413"
 	metadata, err := metadata.NFTMetadata(mintAddress)
 	if err != nil {
 		fmt.Println(err)
