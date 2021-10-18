@@ -33,11 +33,7 @@ func AllNFTsForAddress(address string) ([]string, error) {
 			continue
 		}
 		mint := tokenAccount.Account.Data.Parsed.Info.Mint
-		metadata, err := NFTMetadata(mint)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
+		metadata := NFTMetadata(mint)
 
 		NFTs = append(NFTs, metadata)
 	}
@@ -47,25 +43,30 @@ func AllNFTsForAddress(address string) ([]string, error) {
 
 // NFTMetadata gets metadata for an NFT using the solana token mint address
 // Returns a byte slice containing the NFT metadata json
-func NFTMetadata(address string) (string, error) {
+func NFTMetadata(address string) string {
 	rpcClient := jsonrpc.NewClient(SOLANA_MAINNET)
 	programAddress := derivePDA(address)
 	accountInfo, err := GetAccountInfo(rpcClient, programAddress.String())
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return ""
 	}
 
 	if accountInfo == nil {
-		return "", nil
+		return ""
 	}
 
 	if reflect.ValueOf(accountInfo.Value).IsZero() {
-		return "", nil
+		return ""
 	}
 
 	nftURI := getURI(accountInfo)
-	return requestNFTMetadata(nftURI)
+
+	metadata, err := requestNFTMetadata(nftURI)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return metadata
 }
 
 func derivePDA(mint string) solana.PublicKey {
