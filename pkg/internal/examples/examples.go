@@ -19,9 +19,6 @@ func accountOwnerExample() {
 
 func mintAddressExample() {
 	mintAddress := "9qtN3RDr8sykdzmJoDjYbAAQmjoQcAfsqj8ipT6rh413"
-	metadata, err := metadata.NFTMetadata(mintAddress)
-	if err != nil {
-		fmt.Println(err)
-	}
+	metadata := metadata.NFTMetadata(mintAddress)
 	fmt.Println(string(metadata))
 }
